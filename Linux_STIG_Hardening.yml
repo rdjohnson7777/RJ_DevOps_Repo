@@ -1,0 +1,21 @@
+---
+- name: Ansible Playbook to automate large-scale STIG compliance
+  hosts: Cluster_A
+  gather_facts: true
+  become: yes
+  tasks:
+    - name: Ensure mailx package is installed
+      ansible.builtin.yum:
+        package: mailx
+        state: present
+
+    - name: Set kernel.perf_event_paranoid = 2 in sysctl.conf
+      ansible.builtin.lineinfile:
+        path: /etc/sysctl.conf
+        regexp: '^kernel.perf_event_paranoid'
+        line: 'kernel.perf_event_paranoid = 2'
+        backup: yes
+      handlers: reload_sysctl
+
+    - name: Set minimum password lifetime of 1 day for users
+      ansible.builtin.chage:
