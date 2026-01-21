@@ -5,17 +5,46 @@
   become: yes
   tasks:
     - name: Ensure mailx package is installed
-      ansible.builtin.yum:
+      ansible.builtin.package:
         package: mailx
         state: present
 
     - name: Set kernel.perf_event_paranoid = 2 in sysctl.conf
-      ansible.builtin.lineinfile:
+      ansible.builtin.sysctl:
         path: /etc/sysctl.conf
         regexp: '^kernel.perf_event_paranoid'
         line: 'kernel.perf_event_paranoid = 2'
         backup: yes
       handlers: reload_sysctl
 
+    - name: Set SHA_CRYPT_MIN_ROUNDS in /etc/login.defs  
+      ansible.builtin.lineinfile:
+        path: /etc/login.defs
+        regexp: '^#?SHA_CRYPT_MIN_ROUNDS'
+        line: '600000000'
+
     - name: Set minimum password lifetime of 1 day for users
-      ansible.builtin.chage:
+      block:
+        - name: define users
+          ansible.builtin.set_fact:
+          specific_users:
+           - bob
+           - alice
+
+        - name: Run chage
+          ansible.builtin.shell: |
+            chage -m 1 {{ item }}
+          loop: '{{ specific_users }}'
+          when: specific_users is defined
+      ignore_errors: yes
+
+
+
+
+
+      builtin.find:
+      /opt/splunkforwarder
+
+      builtin.file:
+      750
+      tags: splunk750
