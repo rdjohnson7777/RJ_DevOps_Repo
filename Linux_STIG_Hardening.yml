@@ -3,48 +3,94 @@
   hosts: Cluster_A
   gather_facts: true
   become: yes
+
   tasks:
     - name: Ensure mailx package is installed
       ansible.builtin.package:
-        package: mailx
+        name: mailx
         state: present
 
-    - name: Set kernel.perf_event_paranoid = 2 in sysctl.conf
+    - name: Set kernel.perf_event_paranoid = 2
       ansible.builtin.sysctl:
-        path: /etc/sysctl.conf
-        regexp: '^kernel.perf_event_paranoid'
-        line: 'kernel.perf_event_paranoid = 2'
-        backup: yes
-      handlers: reload_sysctl
+        name: kernel.perf_event_paranoid
+        value: 2
+        state: present
+        reload: yes
 
-    - name: Set SHA_CRYPT_MIN_ROUNDS in /etc/login.defs  
+    - name: Set SHA_CRYPT_MIN_ROUNDS in /etc/login.defs
       ansible.builtin.lineinfile:
         path: /etc/login.defs
-        regexp: '^#?SHA_CRYPT_MIN_ROUNDS'
-        line: '600000000'
+        regexp: '^#?\s*SHA_CRYPT_MIN_ROUNDS'
+        line: 'SHA_CRYPT_MIN_ROUNDS 100000'
 
     - name: Set minimum password lifetime of 1 day for users
       block:
-        - name: define users
+        - name: Define users
           ansible.builtin.set_fact:
-          specific_users:
-           - bob
-           - alice
+            specific_users:
+              - alice
+              - bob
+              - ryan
 
-        - name: Run chage
-          ansible.builtin.shell: |
-            chage -m 1 {{ item }}
-          loop: '{{ specific_users }}'
-          when: specific_users is defined
+        - name: Run chage on users
+          ansible.builtin.command: chage -m 1 {{ item }}
+          loop: "{{ specific_users }}"
       ignore_errors: yes
 
+    # R-230279 RHEL-08-010423
+    - name: Ensure init_on_free=1 exists in GRUB  
+      block:
+        - name: Backup /etc/default/grub
+          ansible.builtin.copy:
+            src: /etc/default/grub
+            dest: "/etc/default/grub.bak.{{ ansible_date_time_iso8601 }}"
+            remote_src: yes
 
+        - name: Check if init_on_free=1 is already set
+          ansible.builtin.shell: 'grep -qE "GRUB_CMDLINE_LINUX=.*\binit_on_free=1\b" /etc/defaultgrub'
+          register: init_on_free_check
+          failed_when: false
 
+        - name: Change value to 1 if it has a value other than 1
+          ansible.builtin.replace:
+            path: /etc/default/grub
+            regexp: '^(GRUB_CMDLINE_LINUX=".*?\b)init_on_free=\d+(.*)"$'
+            replace: '\1init_on_free=1\2"'
+          register: init_enforce
 
+        - name: Append init_on_free=1 if it does not exist
+          ansible.builtin.replace:
+            path: /etc/default/grub
+            regexp: '^(GRUB_CMDLINE_LINUX=".*)(?<!init_on_free)(?=.*)"$'
+            replace: '\1 init_on_free=1"'
+          register: init_append
+          when: not init_on_free_check.rc == 0 and not init_enforce.changed
 
-      builtin.find:
-      /opt/splunkforwarder
+        - name: Regenerate GRUB configuration if changes were made to the file
+          ansible.builtin.command: grub2-mkconfig
+          when: init_enforce.changed or init_append.changed
+      tags: init
 
-      builtin.file:
-      750
-      tags: splunk750
+    - name: Set permissions to 750 on system library directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        mode: "0750"
+        state: directory
+      loop:
+        - /lib
+        - /lib64
+        - /usr/lib
+        - /usr/lib64
+
+    - name: Ensure init_on_free=1 is set in /etc/default/grub
+      ansible.builtin.lineinfile:
+        path: /etc/default/grub
+        regexp: '(^|\s)init_on_free='
+        line: 'init_on_free=1'
+        insertafter: EOF
+      notify: grub_mkconfig
+      tags: grub
+
+  handlers:
+    - name: grub_mkconfig
+      ansible.builtin.command: grub-mkconfig -o /boot/grub2/grub.cfg
