@@ -1,28 +1,32 @@
 ---
 - name: Ansible Playbook to automate large-scale STIG compliance
   hosts: Cluster_A
-  gather_facts: true
+  gather_facts: True
   become: yes
 
   tasks:
+    # R-256974 RHEL-08-010358
     - name: Ensure mailx package is installed
       ansible.builtin.package:
         name: mailx
         state: present
 
-    - name: Set kernel.perf_event_paranoid = 2
+    # R-230266 RHEL-08-010372
+    - name: Set kernel.kexec_load_disabled = 1
       ansible.builtin.sysctl:
-        name: kernel.perf_event_paranoid
-        value: 2
+        name: kernel.kexec_load_disabled
+        value: 1
         state: present
         reload: yes
 
+    # R-230233 RHEL-08-010130
     - name: Set SHA_CRYPT_MIN_ROUNDS in /etc/login.defs
       ansible.builtin.lineinfile:
         path: /etc/login.defs
         regexp: '^#?\s*SHA_CRYPT_MIN_ROUNDS'
         line: 'SHA_CRYPT_MIN_ROUNDS 100000'
 
+    # R-230364 RHEL-08-020180
     - name: Set minimum password lifetime of 1 day for users
       block:
         - name: Define users
@@ -67,14 +71,15 @@
           when: not init_on_free_check.rc == 0 and not init_enforce.changed
 
         - name: Regenerate GRUB configuration if changes were made to the file
-          ansible.builtin.command: grub2-mkconfig
+          notify: grub_regenerate
           when: init_enforce.changed or init_append.changed
       tags: init
 
-    - name: Set permissions to 750 on system library directories
+    # R-251707 RHEL-08-010331
+    - name: Set permissions to 755 on system library directories
       ansible.builtin.file:
         path: "{{ item }}"
-        mode: "0750"
+        mode: "0755"
         state: directory
       loop:
         - /lib
@@ -82,15 +87,6 @@
         - /usr/lib
         - /usr/lib64
 
-    - name: Ensure init_on_free=1 is set in /etc/default/grub
-      ansible.builtin.lineinfile:
-        path: /etc/default/grub
-        regexp: '(^|\s)init_on_free='
-        line: 'init_on_free=1'
-        insertafter: EOF
-      notify: grub_mkconfig
-      tags: grub
-
   handlers:
-    - name: grub_mkconfig
-      ansible.builtin.command: grub-mkconfig -o /boot/grub2/grub.cfg
+    - name: grub_regenerate
+      ansible.builtin.command: grub2-mkconfig
