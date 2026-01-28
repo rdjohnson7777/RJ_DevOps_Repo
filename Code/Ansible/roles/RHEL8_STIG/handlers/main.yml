@@ -1,0 +1,4 @@
+---
+handlers:
+- name: grub_regenerate
+  ansible.builtin.command: grub2-mkconfig
