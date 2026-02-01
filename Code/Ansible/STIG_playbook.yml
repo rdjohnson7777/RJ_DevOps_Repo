@@ -1,6 +1,6 @@
 ---
 - name: Ansible Playbook to automate large-scale STIG compliance on RHEL 8
-  hosts: Cluster_A
+  hosts: rhel8_hosts
   gather_facts: True
   become: yes
   roles:

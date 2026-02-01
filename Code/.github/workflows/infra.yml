@@ -1,43 +1,124 @@
 ---
-name: Infrastructure Pipeline
+name: Infrastructure Pipeline to create AWS EC2 and install Ansible Container (Production)
 
 on:
   push:
     branches: [ "main" ]
 
 jobs:
-  terraform:
-    runs-on: [self-hosted, rhel8]
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.6.6
-
-      - name: Terraform Init
-        working-directory: terraform
-        run: terraform init
-
-      - name: Terraform Validate
-        working-directory: terraform
-        run: terraform validate
-
-  ansible:
-    needs: terraform
-    runs-on: [self-hosted, rhel8]
+  terraform_plan:
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Ansible
-        run: |
-          sudo dnf install -y epel-release
-          sudo dnf install -y ansible
+      - uses: hashicorp/setup-terraform@v3
 
-      - name: Run STIG hardening
-        working-directory: Ansible
-        run: ansible-playbook STIG_playbook.yml
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Upload tfplan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: tfplan
+
+  terraform_apply:
+    needs: terraform_plan
+    runs-on: ubuntu-latest
+    environment: production
+
+    outputs:
+      rhel_ip: ${{ steps.tf_outputs.outputs.rhel_ip }}
+      ssh_user: ${{ steps.tf_outputs.outputs.ssh_user }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Download tfplan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+
+      - name: Terraform Apply
+        run: terraform apply tfplan
+
+      - name: Capture Terraform outputs
+        id: tf_outputs
+        run: |
+          echo "rhel_ip=$(terraform output -raw rhel_public_ip)" >> $GITHUB_OUTPUT
+          echo "ssh_user=$(terraform output -raw ssh_user)" >> $GITHUB_OUTPUT
+
+  ansible_check:
+    needs: terraform_apply
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write SSH key
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key.pem
+          chmod 600 ssh_key.pem
+
+      - name: Run Ansible STIG hardening (check mode)
+        uses: addnab/docker-run-action@v3
+        with:
+          image: registry.access.redhat.com/ubi8/ubi
+          options: -v ${{ github.workspace }}:/workspace
+          run: |
+            dnf install -y ansible openssh-clients
+
+            mkdir -p /workspace/inventory
+            cat <<EOF > /workspace/inventory/hosts
+            [rhel8_hosts]
+            target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} \
+                   ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} \
+                   ansible_ssh_private_key_file=/workspace/ssh_key.pem
+            EOF
+
+            chmod 600 /workspace/ssh_key.pem
+            cd /workspace/Ansible
+            ansible-playbook -i /workspace/inventory/hosts STIG_playbook.yml --check
+
+  ansible_enforce:
+    needs: ansible_check
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write SSH key
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key.pem
+          chmod 600 ssh_key.pem
+
+      - name: Run Ansible STIG hardening (enforce mode)
+        uses: addnab/docker-run-action@v3
+        with:
+          image: registry.access.redhat.com/ubi8/ubi
+          options: -v ${{ github.workspace }}:/workspace
+          run: |
+            dnf install -y ansible openssh-clients
+
+            mkdir -p /workspace/inventory
+            cat <<EOF > /workspace/inventory/hosts
+            [rhel8_hosts]
+            target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} \
+                   ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} \
+                   ansible_ssh_private_key_file=/workspace/ssh_key.pem
+            EOF
+
+            chmod 600 /workspace/ssh_key.pem
+            cd /workspace/Ansible
+            ansible-playbook -i /workspace/inventory/hosts STIG_playbook.yml

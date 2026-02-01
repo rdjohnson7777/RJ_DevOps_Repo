@@ -4,6 +4,7 @@
   ansible.builtin.package:
     name: mailx
     state: present
+  tags: mailx
 
 # R-230266 RHEL-08-010372
 - name: Set kernel.kexec_load_disabled = 1
@@ -12,6 +13,7 @@
     value: 1
     state: present
     reload: yes
+  tags: kexec
 
 # R-230233 RHEL-08-010130
 - name: Set SHA_CRYPT_MIN_ROUNDS in /etc/login.defs
@@ -19,6 +21,7 @@
     path: /etc/login.defs
     regexp: '^#?\s*SHA_CRYPT_MIN_ROUNDS'
     line: 'SHA_CRYPT_MIN_ROUNDS 100000'
+  tags: sha
 
 # R-230364 RHEL-08-020180
 - name: Set minimum password lifetime of 1 day for users
@@ -34,6 +37,7 @@
       ansible.builtin.command: chage -m 1 {{ item }}
       loop: "{{ specific_users }}"
   ignore_errors: yes
+  tags: minpw
 
 # R-230279 RHEL-08-010423
 - name: Ensure init_on_free=1 exists in GRUB  
@@ -80,3 +84,4 @@
     - /lib64
     - /usr/lib
     - /usr/lib64
+  tags: syslib
