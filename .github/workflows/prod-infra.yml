@@ -20,9 +20,11 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
+        working-directory: Code/terraform
         run: terraform init
 
       - name: Terraform Plan
+        working-directory: Code/terraform
         run: terraform plan -out=tfplan
 
       - name: Upload tfplan
@@ -50,6 +52,7 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
+        working-directory: Code/terraform
         run: terraform init
 
       - name: Download tfplan
@@ -58,6 +61,7 @@ jobs:
           name: tfplan
 
       - name: Terraform Apply
+        working-directory: Code/terraform
         run: terraform apply tfplan
 
       - name: Capture Terraform outputs
