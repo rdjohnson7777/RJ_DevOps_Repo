@@ -20,11 +20,11 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
-        working-directory: Code/terraform
+        working-directory: code/terraform
         run: terraform init
 
       - name: Terraform Plan
-        working-directory: Code/terraform
+        working-directory: code/terraform
         run: terraform plan -out=tfplan
 
       - name: Upload tfplan
@@ -52,7 +52,7 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
-        working-directory: Code/terraform
+        working-directory: code/terraform
         run: terraform init
 
       - name: Download tfplan
@@ -61,7 +61,7 @@ jobs:
           name: tfplan
 
       - name: Terraform Apply
-        working-directory: Code/terraform
+        working-directory: code/terraform
         run: terraform apply tfplan
 
       - name: Capture Terraform outputs
@@ -99,7 +99,7 @@ jobs:
             EOF
 
             chmod 600 /workspace/ssh_key.pem
-            cd /workspace/Ansible
+            cd /workspace/ansible
             ansible-playbook -i /workspace/inventory/hosts STIG_playbook.yml --check
 
   ansible_enforce:
@@ -132,5 +132,5 @@ jobs:
             EOF
 
             chmod 600 /workspace/ssh_key.pem
-            cd /workspace/Ansible
+            cd /workspace/ansible
             ansible-playbook -i /workspace/inventory/hosts STIG_playbook.yml
