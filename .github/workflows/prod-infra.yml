@@ -19,6 +19,15 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
 
+      - name: Debug filesystem
+        run: |
+          pwd
+          ls -la
+          echo "----"
+          ls -la code || true
+          echo "----"
+          find . -maxdepth 4 -type d
+
       - name: Terraform Init
         working-directory: code/terraform
         run: terraform init
