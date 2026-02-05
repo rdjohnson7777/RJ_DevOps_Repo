@@ -115,3 +115,11 @@ resource "aws_instance" "linux" {
     Environment = "dev"
   }
 }
+
+output "rhel_public_ip" {
+  value = aws_instance.linux.public_ip
+}
+
+output "ssh_user" {
+  value = "ec2-user"  # or whatever your user is
+}
