@@ -68,6 +68,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tfplan
+          path: code/terraform
 
       - name: Terraform Apply
         working-directory: code/terraform
