@@ -34,7 +34,7 @@ jobs:
 
       - name: Terraform Plan
         working-directory: code/terraform
-        run: terraform plan -out=tfplan
+        run: terraform plan -var="my_public_ip=${{ secrets.MY_PUBLIC_IP }}" -out=tfplan
 
       - name: Upload tfplan
         uses: actions/upload-artifact@v4
@@ -71,7 +71,7 @@ jobs:
 
       - name: Terraform Apply
         working-directory: code/terraform
-        run: terraform apply tfplan
+        run: terraform apply -var="my_public_ip=${{ secrets.MY_PUBLIC_IP }}" tfplan
 
       - name: Capture Terraform outputs
         id: tf_outputs
