@@ -97,7 +97,7 @@ jobs:
       - name: Run Ansible STIG hardening (check mode)
         uses: addnab/docker-run-action@v3
         with:
-          image: registry.access.redhat.com/ubi8/ubi
+          image: python:3.11-slim
           options: -v ${{ github.workspace }}:/workspace
           run: |
             apt-get update
