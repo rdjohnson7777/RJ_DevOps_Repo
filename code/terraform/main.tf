@@ -103,8 +103,18 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 # EC2 Instance
 #####################
 
+data "aws_ami" "rhel8" {
+  most_recent = true
+  owners      = ["309956199498"] # Red Hat official
+
+  filter {
+    name   = "name"
+    values = ["RHEL-8.*_HVM-*-x86_64-*"]
+  }
+}
+
 resource "aws_instance" "linux" {
-  ami                    = "ami-0a3c3a20c09d6f377"
+  ami                    = data.aws_ami.rhel8.id
   instance_type          = "t3.micro"
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.ssh_only.id]
