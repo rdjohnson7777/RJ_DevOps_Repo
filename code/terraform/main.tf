@@ -121,5 +121,5 @@ output "rhel_public_ip" {
 }
 
 output "ssh_user" {
-  value = "ec2-user"  # or whatever your user is
+  value = "ec2-user"
 }
