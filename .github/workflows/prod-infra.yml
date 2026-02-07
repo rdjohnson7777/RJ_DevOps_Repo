@@ -100,14 +100,16 @@ jobs:
           image: registry.access.redhat.com/ubi8/ubi
           options: -v ${{ github.workspace }}:/workspace
           run: |
-            dnf install -y ansible openssh-clients
+            apt-get update
+            apt-get install -y openssh-client sshpass git
+            pip install ansible
 
             mkdir -p /workspace/inventory
             cat <<EOF > /workspace/inventory/hosts
             [rhel8_hosts]
             target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} \
-                   ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} \
-                   ansible_ssh_private_key_file=/workspace/ssh_key.pem
+                  ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} \
+                  ansible_ssh_private_key_file=/workspace/ssh_key.pem
             EOF
 
             chmod 600 /workspace/ssh_key.pem
