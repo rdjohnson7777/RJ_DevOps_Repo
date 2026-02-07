@@ -113,7 +113,7 @@ jobs:
             EOF
 
             chmod 600 /workspace/ssh_key.pem
-            cd /workspace/ansible
+            cd /workspace/code/ansible
             ansible-playbook -i /workspace/inventory/hosts STIG_playbook.yml --check
 
   ansible_enforce:
@@ -146,5 +146,5 @@ jobs:
             EOF
 
             chmod 600 /workspace/ssh_key.pem
-            cd /workspace/ansible
+            cd /workspace/code/ansible
             ansible-playbook -i /workspace/inventory/hosts STIG_playbook.yml
