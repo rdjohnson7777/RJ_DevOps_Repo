@@ -59,6 +59,7 @@
         regexp: '^(GRUB_CMDLINE_LINUX=".*?\b)init_on_free=\d+(.*)"$'
         replace: '\1init_on_free=1\2"'
       register: init_enforce
+      notify: grub_regenerate
 
     - name: Append init_on_free=1 if it does not exist
       ansible.builtin.replace:
@@ -67,10 +68,11 @@
         replace: '\1 init_on_free=1"'
       register: init_append
       when: not init_on_free_check.rc == 0 and not init_enforce.changed
-
-    - name: Regenerate GRUB configuration if changes were made to the file
       notify: grub_regenerate
-      when: init_enforce.changed or init_append.changed
+
+#    - name: Regenerate GRUB configuration if changes were made to the file
+#      notify: grub_regenerate
+#      when: init_enforce.changed or init_append.changed
   tags: init
 
 # R-251707 RHEL-08-010331
