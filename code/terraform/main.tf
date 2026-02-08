@@ -113,21 +113,23 @@ data "aws_ami" "rhel8" {
   }
 }
 
-resource "aws_instance" "linux" {
+resource "aws_instance" "rhel8" {
   ami                    = data.aws_ami.rhel8.id
   instance_type          = "t3.micro"
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.ssh_only.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
 
+  key_name = aws_key_pair.github_runner_pub_key.key_name
+
   tags = {
-    Name = "linux-ec2"
+    Name = "rhel8-ec2"
     Environment = "dev"
   }
 }
 
 output "rhel_public_ip" {
-  value = aws_instance.linux.public_ip
+  value = aws_instance.rhel8.public_ip
 }
 
 output "ssh_user" {

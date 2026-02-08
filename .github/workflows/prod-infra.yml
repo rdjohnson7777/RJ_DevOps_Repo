@@ -91,8 +91,15 @@ jobs:
 
       - name: Write SSH key
         run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key.pem
+          echo "${{ secrets.PRIV_KEY_ALLOW_RUNNER }}" | tr -d '\r' > ssh_key.pem
           chmod 600 ssh_key.pem
+
+### TESTING SSH, DEBUG
+      - name: Test SSH connectivity
+        run: |
+          ssh -i ssh_key.pem -o StrictHostKeyChecking=no \
+          ${{ needs.terraform_apply.outputs.ssh_user }}@${{ needs.terraform_apply.outputs.rhel_ip }} \
+          "echo SSH SUCCESS"
 
       - name: Run Ansible STIG hardening (check mode)
         uses: addnab/docker-run-action@v3
@@ -126,7 +133,7 @@ jobs:
 
       - name: Write SSH key
         run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key.pem
+          echo "${{ secrets.PRIV_KEY_ALLOW_RUNNER }}" | tr -d '\r' > ssh_key.pem
           chmod 600 ssh_key.pem
 
       - name: Run Ansible STIG hardening (enforce mode)
