@@ -49,7 +49,7 @@
         remote_src: yes
 
     - name: Check if init_on_free=1 is already set
-      ansible.builtin.shell: 'grep -qE "GRUB_CMDLINE_LINUX=.*\binit_on_free=1\b" /etc/defaultgrub'
+      ansible.builtin.shell: 'grep -qE "GRUB_CMDLINE_LINUX=.*\binit_on_free=1\b" /etc/default/grub'
       register: init_on_free_check
       failed_when: false
 
