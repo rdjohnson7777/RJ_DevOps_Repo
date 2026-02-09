@@ -106,6 +106,9 @@ jobs:
         with:
           image: python:3.11-slim
           options: -v ${{ github.workspace }}:/workspace
+          env:
+            ANSIBLE_HOST_KEY_CHECKING: "False"
+
           run: |
             apt-get update
             apt-get install -y openssh-client sshpass git
