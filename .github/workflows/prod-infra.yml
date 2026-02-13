@@ -113,7 +113,7 @@ jobs:
           [rhel8_hosts]
           target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} \
                 ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} \
-                ansible_ssh_private_key_file=ssh_key.pem
+                ansible_ssh_private_key_file=../../ssh_key.pem
           EOF
 
       - name: Run Ansible STIG hardening (check mode)
