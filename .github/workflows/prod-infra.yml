@@ -101,29 +101,27 @@ jobs:
           ${{ needs.terraform_apply.outputs.ssh_user }}@${{ needs.terraform_apply.outputs.rhel_ip }} \
           "echo SSH SUCCESS"
 
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible openssh-client sshpass
+
+      - name: Create Ansible inventory
+        run: |
+          mkdir -p inventory
+          cat <<EOF > inventory/hosts
+          [rhel8_hosts]
+          target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} \
+                ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} \
+                ansible_ssh_private_key_file=ssh_key.pem
+          EOF
+
       - name: Run Ansible STIG hardening (check mode)
-        uses: addnab/docker-run-action@v3
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
-        with:
-          image: python:3.11-slim
-          options: -v ${{ github.workspace }}:/workspace
-          run: |
-            apt-get update
-            apt-get install -y openssh-client sshpass git
-            pip install ansible
-
-            mkdir -p /workspace/inventory
-            cat <<EOF > /workspace/inventory/hosts
-            [rhel8_hosts]
-            target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} \
-                  ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} \
-                  ansible_ssh_private_key_file=/workspace/ssh_key.pem
-            EOF
-
-            chmod 600 /workspace/ssh_key.pem
-            cd /workspace/code/ansible
-            ansible-playbook -i /workspace/inventory/hosts STIG_playbook.yml --check
+        run: |
+          cd code/ansible
+          ansible-playbook -i ../../inventory/hosts STIG_playbook.yml --check
 
   ansible_enforce:
     needs: ansible_check
@@ -138,22 +136,14 @@ jobs:
           echo "${{ secrets.PRIV_KEY_ALLOW_RUNNER }}" | tr -d '\r' > ssh_key.pem
           chmod 600 ssh_key.pem
 
+      - name: Install Ansible (enforce stage)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible openssh-client sshpass
+
       - name: Run Ansible STIG hardening (enforce mode)
-        uses: addnab/docker-run-action@v3
-        with:
-          image: registry.access.redhat.com/ubi8/ubi
-          options: -v ${{ github.workspace }}:/workspace
-          run: |
-            dnf install -y ansible openssh-clients
-
-            mkdir -p /workspace/inventory
-            cat <<EOF > /workspace/inventory/hosts
-            [rhel8_hosts]
-            target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} \
-                   ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} \
-                   ansible_ssh_private_key_file=/workspace/ssh_key.pem
-            EOF
-
-            chmod 600 /workspace/ssh_key.pem
-            cd /workspace/code/ansible
-            ansible-playbook -i /workspace/inventory/hosts STIG_playbook.yml
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
+        run: |
+          cd code/ansible
+          ansible-playbook -i ../../inventory/hosts STIG_playbook.yml
