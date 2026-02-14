@@ -101,6 +101,21 @@ jobs:
           ${{ needs.terraform_apply.outputs.ssh_user }}@${{ needs.terraform_apply.outputs.rhel_ip }} \
           "echo SSH SUCCESS"
 
+      - name: Wait for instance to finish bootstrapping
+        run: |
+          echo "Waiting for SSH to become available..."
+          until ssh -o StrictHostKeyChecking=no -i ssh_key.pem ec2-user@${{ needs.terraform_apply.outputs.rhel_ip }} "echo SSH ready" 2>/dev/null; do
+            sleep 10
+          done
+
+          echo "Waiting for cloud-init to finish..."
+          ssh -o StrictHostKeyChecking=no -i ssh_key.pem ec2-user@${{ needs.terraform_apply.outputs.rhel_ip }} \
+            "cloud-init status --wait"
+
+          echo "Ensuring Python is installed..."
+          ssh -o StrictHostKeyChecking=no -i ssh_key.pem ec2-user@${{ needs.terraform_apply.outputs.rhel_ip }} \
+            "sudo dnf -y install python3"          
+
       - name: Install Ansible
         run: |
           sudo apt-get update
