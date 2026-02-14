@@ -149,9 +149,15 @@ resource "aws_instance" "rhel8" {
 
   key_name = aws_key_pair.github_runner_pub_key.key_name
 
+  user_data = <<-EOF
+            #!/bin/bash
+            dnf -y update
+            dnf -y install python3
+            EOF
+
   tags = {
     Name = "rhel8-ec2"
-    Environment = "dev"
+    Environment = "production"
   }
 }
 
