@@ -1,7 +1,20 @@
 ---
 - name: Ansible Playbook to automate large-scale STIG compliance on RHEL 8
   hosts: rhel8_hosts
-  gather_facts: True
+  gather_facts: false
   become: yes
+
+  pre_tasks:
+    - name: Wait for cloud-init to finish
+      raw: sudo cloud-init status --wait
+      changed_when: false
+
+    - name: Ensure Python is installed
+      raw: test -e /usr/bin/python3 || (sudo dnf -y install python3)
+      changed_when: false
+
+    - name: Gather facts when python is available
+      setup:
+
   roles:
     - RHEL8_STIG
