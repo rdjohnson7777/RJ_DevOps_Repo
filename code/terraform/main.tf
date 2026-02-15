@@ -152,9 +152,7 @@ resource "aws_instance" "rhel8" {
   user_data = <<-EOF
             #!/bin/bash
             dnf -y update
-            dnf -y module enable python39
-            dnf -y install python39 python3-dnf
-            alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
+            dnf -y install python3
             EOF
 
   tags = {
