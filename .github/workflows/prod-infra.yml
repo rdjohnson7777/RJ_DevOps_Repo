@@ -99,42 +99,36 @@ jobs:
         run: |
           ssh -i ssh_key.pem -o StrictHostKeyChecking=no \
           ${{ needs.terraform_apply.outputs.ssh_user }}@${{ needs.terraform_apply.outputs.rhel_ip }} \
-          "echo SSH SUCCESS"
-
-      - name: Wait for instance to finish bootstrapping
-        run: |
-          echo "Waiting for SSH to become available..."
-          until ssh -o StrictHostKeyChecking=no -i ssh_key.pem ec2-user@${{ needs.terraform_apply.outputs.rhel_ip }} "echo SSH ready" 2>/dev/null; do
-            sleep 10
-          done
-
-          echo "Waiting for cloud-init to finish..."
-          ssh -o StrictHostKeyChecking=no -i ssh_key.pem ec2-user@${{ needs.terraform_apply.outputs.rhel_ip }} \
-            "cloud-init status --wait"
-
-          echo "Ensuring Python is installed..."
-          ssh -o StrictHostKeyChecking=no -i ssh_key.pem ec2-user@${{ needs.terraform_apply.outputs.rhel_ip }} \
-            "python3 --version"          
+          "echo SSH SUCCESS" 
 
       - name: Install Ansible
         run: |
           sudo apt-get update
           sudo apt-get install -y ansible openssh-client sshpass
 
-      - name: Create Ansible inventory
-        run: |
-          mkdir -p inventory
-          cat <<EOF > inventory/hosts
-          [rhel8_hosts]
-          target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} ansible_ssh_private_key_file=../../ssh_key.pem ansible_python_interpreter=/usr/bin/python3
-          EOF
-
       - name: Run Ansible STIG hardening (check mode)
+        uses: addnab/docker-run-action@v3
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
-        run: |
-          cd code/ansible
-          ansible-playbook -i ../../inventory/hosts STIG_playbook.yml --check
+        with:
+          image: python:3.11-slim
+          options: -v ${{ github.workspace }}:/workspace
+          run: |
+            apt-get update
+            apt-get install -y openssh-client sshpass git
+            pip install ansible
+
+            mkdir -p /workspace/inventory
+            cat <<EOF > /workspace/inventory/hosts
+            [rhel8_hosts]
+            target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} \
+                  ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} \
+                  ansible_ssh_private_key_file=/workspace/ssh_key.pem
+            EOF
+
+            chmod 600 /workspace/ssh_key.pem
+            cd /workspace/code/ansible
+            ansible-playbook -i ../../inventory/hosts STIG_playbook.yml --check
 
   ansible_enforce:
     needs: ansible_check
