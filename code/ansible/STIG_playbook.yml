@@ -3,7 +3,5 @@
   hosts: rhel8_hosts
   gather_facts: true
   become: yes
-  vars:
-    ansible_python_interpreter: /usr/libexec/platform-python
   roles:
     - RHEL8_STIG
