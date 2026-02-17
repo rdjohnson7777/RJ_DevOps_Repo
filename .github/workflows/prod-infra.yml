@@ -120,9 +120,8 @@ jobs:
               chmod 600 /workspace/ssh_key.pem &&
               cd /workspace/code/ansible &&
               ansible-playbook -i ../../inventory/hosts python_bootstrap.yml
-#              ansible-playbook -i ../../inventory/hosts STIG_playbook.yml --check
             "
-
+#              ansible-playbook -i ../../inventory/hosts STIG_playbook.yml --check
 
   ansible_enforce:
     needs: ansible_check
