@@ -114,8 +114,8 @@ jobs:
               pip install ansible &&
 
               mkdir -p /workspace/inventory &&
-              echo "[rhel8_hosts]" > /workspace/inventory/hosts
-              echo "target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} ansible_ssh_private_key_file=/workspace/ssh_key.pem ansible_python_interpreter=/usr/bin/python3.9" >> /workspace/inventory/hosts
+              echo "[rhel8_hosts]" > /workspace/inventory/hosts &&
+              echo "target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} ansible_ssh_private_key_file=/workspace/ssh_key.pem ansible_python_interpreter=/usr/bin/python3.9" >> /workspace/inventory/hosts &&
 
 
               chmod 600 /workspace/ssh_key.pem &&
@@ -137,14 +137,25 @@ jobs:
           echo "${{ secrets.PRIV_KEY_ALLOW_RUNNER }}" | tr -d '\r' > ssh_key.pem
           chmod 600 ssh_key.pem
 
-      - name: Install Ansible (enforce stage)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ansible openssh-client sshpass
-
       - name: Run Ansible STIG hardening (enforce mode)
-        env:
-          ANSIBLE_HOST_KEY_CHECKING: "False"
         run: |
-          cd code/ansible
-          ansible-playbook -i ../../inventory/hosts STIG_playbook.yml
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            -e ANSIBLE_HOST_KEY_CHECKING=False \
+            python:3.11-slim \
+            bash -c "
+              apt-get update &&
+              apt-get install -y openssh-client sshpass git &&
+              pip install ansible &&
+
+              mkdir -p /workspace/inventory &&
+              echo '[rhel8_hosts]' > /workspace/inventory/hosts &&
+              echo 'target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} ansible_ssh_private_key_file=/workspace/ssh_key.pem ansible_python_interpreter=/usr/bin/python3.9' >> /workspace/inventory/hosts &&
+
+              chmod 600 /workspace/ssh_key.pem &&
+              cd /workspace/code/ansible &&
+              ansible-playbook -i ../../inventory/hosts python_bootstrap.yml &&
+              ansible-playbook -i ../../inventory/hosts STIG_playbook.yml
+            "
+
