@@ -2,7 +2,8 @@
 - name: Bootstrap Python on new RHEL instances that utilize ansible
   hosts: rhel8_hosts
   gather_facts: false
+  become: yes
 
   tasks:
     - name: Install Python 3 on RHEL
-      raw: sudo dnf -y install python3
+      raw: dnf -y install python3
