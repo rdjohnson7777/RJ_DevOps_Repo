@@ -101,28 +101,27 @@ jobs:
           ${{ needs.terraform_apply.outputs.ssh_user }}@${{ needs.terraform_apply.outputs.rhel_ip }} \
           "echo SSH SUCCESS" 
 
-      - name: Setup Docker CLI
-        uses: docker/setup-buildx-action@v2
-
       - name: Run Ansible STIG hardening (check mode)
-        uses: addnab/docker-run-action@v3
-        env:
-          ANSIBLE_HOST_KEY_CHECKING: "False"
-        with:
-          image: python:3.11-slim
-          options: -v ${{ github.workspace }}:/workspace
-          run: |
-            apt-get update
-            apt-get install -y openssh-client sshpass git
-            pip install ansible
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            -e ANSIBLE_HOST_KEY_CHECKING=False \
+            python:3.11-slim \
+            bash -c "
+              apt-get update &&
+              apt-get install -y openssh-client sshpass git &&
+              pip install ansible &&
 
-            mkdir -p /workspace/inventory
-            echo "[rhel8_hosts]" > /workspace/inventory/hosts
-            echo "target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} ansible_ssh_private_key_file=/workspace/ssh_key.pem" >> /workspace/inventory/hosts
+              mkdir -p /workspace/inventory &&
+              echo '[rhel8_hosts]' > /workspace/inventory/hosts &&
+              echo 'target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} ansible_ssh_private_key_file=/workspace/ssh_key.pem' >> /workspace/inventory/hosts &&
 
-            chmod 600 /workspace/ssh_key.pem
-            cd /workspace/code/ansible
-            ansible-playbook -i ../../inventory/hosts STIG_playbook.yml --check
+              chmod 600 /workspace/ssh_key.pem &&
+              cd /workspace/code/ansible &&
+              ansible-playbook -i ../../inventory/hosts STIG_playbook.yml --check
+            "
+
 
   ansible_enforce:
     needs: ansible_check
