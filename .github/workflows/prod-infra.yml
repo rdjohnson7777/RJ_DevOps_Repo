@@ -101,11 +101,6 @@ jobs:
           ${{ needs.terraform_apply.outputs.ssh_user }}@${{ needs.terraform_apply.outputs.rhel_ip }} \
           "echo SSH SUCCESS" 
 
-      - name: Install Ansible
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ansible openssh-client sshpass
-
       - name: Setup Docker CLI
         uses: docker/setup-buildx-action@v2
 
@@ -122,12 +117,8 @@ jobs:
             pip install ansible
 
             mkdir -p /workspace/inventory
-            cat <<EOF > /workspace/inventory/hosts
-            [rhel8_hosts]
-            target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} \
-                  ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} \
-                  ansible_ssh_private_key_file=/workspace/ssh_key.pem
-            EOF
+            echo "[rhel8_hosts]" > /workspace/inventory/hosts
+            echo "target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} ansible_ssh_private_key_file=/workspace/ssh_key.pem" >> /workspace/inventory/hosts
 
             chmod 600 /workspace/ssh_key.pem
             cd /workspace/code/ansible
