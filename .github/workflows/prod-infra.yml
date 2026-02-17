@@ -106,8 +106,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ansible openssh-client sshpass
 
+      - name: Setup Docker CLI
+        uses: docker/setup-buildx-action@v2
+
       - name: Run Ansible STIG hardening (check mode)
-        uses: addnab/docker-run-action@v4
+        uses: addnab/docker-run-action@v3
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
         with:
