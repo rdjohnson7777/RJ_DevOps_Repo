@@ -3,8 +3,6 @@
   hosts: rhel8_hosts
   gather_facts: false
   become: yes
-  vars:
-    ansible_python_interpreter: /usr/libexec/platform-python
   tasks:
     - name: Install Python 3 on RHEL
-      raw: dnf install -y python39 python39-libdnf python39-dnf
+      raw: dnf install -y python39
