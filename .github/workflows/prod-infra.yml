@@ -121,7 +121,7 @@ jobs:
               chmod 600 /workspace/ssh_key.pem &&
               cd /workspace/code/ansible &&
               ansible-playbook -i ../../inventory/hosts python_bootstrap.yml &&
-              ansible-playbook -i ../../inventory/hosts STIG_playbook.yml --check &&
+              ansible-playbook -i ../../inventory/hosts STIG_playbook.yml --check
             "
 
   ansible_enforce:
@@ -151,11 +151,11 @@ jobs:
 
               mkdir -p /workspace/inventory &&
               echo '[rhel8_hosts]' > /workspace/inventory/hosts &&
-              echo 'target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} ansible_ssh_private_key_file=/workspace/ssh_key.pem ansible_python_interpreter=/usr/bin/python3.9' >> /workspace/inventory/hosts &&
+              echo 'target ansible_host=${{ needs.terraform_apply.outputs.rhel_ip }} ansible_user=${{ needs.terraform_apply.outputs.ssh_user }} ansible_ssh_private_key_file=/workspace/ssh_key.pem ansible_python_interpreter=auto_silent' >> /workspace/inventory/hosts &&
 
               chmod 600 /workspace/ssh_key.pem &&
               cd /workspace/code/ansible &&
               ansible-playbook -i ../../inventory/hosts python_bootstrap.yml &&
-              ansible-playbook -i ../../inventory/hosts STIG_playbook.yml &&
+              ansible-playbook -i ../../inventory/hosts STIG_playbook.yml
             "
 
