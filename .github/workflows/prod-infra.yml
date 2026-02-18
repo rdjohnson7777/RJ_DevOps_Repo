@@ -94,6 +94,12 @@ jobs:
           echo "${{ secrets.PRIV_KEY_ALLOW_RUNNER }}" | tr -d '\r' > ssh_key.pem
           chmod 600 ssh_key.pem
 
+      - name: Wait for cloud-init to finish
+        run: |
+          ssh -i ssh_key.pem -o StrictHostKeyChecking=no \
+          ${{ needs.terraform_apply.outputs.ssh_user }}@${{ needs.terraform_apply.outputs.rhel_ip }} \
+          "cloud-init status --wait"
+
 ### TESTING SSH, DEBUG
       - name: Test SSH connectivity
         run: |
