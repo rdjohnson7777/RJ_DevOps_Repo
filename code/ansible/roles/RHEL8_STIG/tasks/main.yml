@@ -1,10 +1,10 @@
 ---
 # R-256974 RHEL-08-010358
-#- name: Ensure mailx package is installed
-#  ansible.builtin.package:
-#    name: mailx
-#    state: present
-#  tags: mailx
+- name: Ensure mailx package is installed
+  ansible.builtin.dnf:
+    name: mailx
+    state: present
+  tags: mailx
 
 # R-230266 RHEL-08-010372
 - name: Set kernel.kexec_load_disabled = 1
@@ -45,7 +45,7 @@
     - name: Backup /etc/default/grub
       ansible.builtin.copy:
         src: /etc/default/grub
-        dest: "/etc/default/grub.bak.{{ ansible_date_time_iso8601 }}"
+        dest: "/etc/default/grub.bak.{{ ansible_date_time_iso.8601 }}"
         remote_src: yes
 
     - name: Check if init_on_free=1 is already set
