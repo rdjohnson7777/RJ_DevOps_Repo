@@ -1,12 +1,9 @@
 ---
 # R-256974 RHEL-08-010358
 - name: Ensure mailx package is installed
-  ansible.builtin.dnf:
+  ansible.builtin.yum:
     name: mailx
     state: present
-    use_backend: dnf
-  vars:
-    ansible_python_interpreter: /usr/libexec/platform-python
   tags: mailx
 
 # R-230266 RHEL-08-010372
