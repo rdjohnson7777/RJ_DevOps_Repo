@@ -4,6 +4,9 @@
   ansible.builtin.dnf:
     name: mailx
     state: present
+    use_backend: dnf
+  vars:
+    ansible_python_interpreter: /usr/libexec/platform-python
   tags: mailx
 
 # R-230266 RHEL-08-010372
