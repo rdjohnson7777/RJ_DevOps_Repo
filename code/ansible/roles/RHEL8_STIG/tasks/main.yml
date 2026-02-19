@@ -1,10 +1,10 @@
 ---
 # R-256974 RHEL-08-010358
-- name: Ensure mailx package is installed
-  ansible.builtin.package:
-    name: mailx
-    state: present
-  tags: mailx
+#- name: Ensure mailx package is installed
+#  ansible.builtin.package:
+#    name: mailx
+#    state: present
+#  tags: mailx
 
 # R-230266 RHEL-08-010372
 - name: Set kernel.kexec_load_disabled = 1
