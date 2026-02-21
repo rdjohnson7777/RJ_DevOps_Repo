@@ -117,7 +117,7 @@ jobs:
             bash -c "
               apt-get update &&
               apt-get install -y openssh-client sshpass git &&
-              pip install ansible &&
+              pip install "ansible-core==2.16.*" &&
 
               mkdir -p /workspace/inventory &&
               echo '[rhel8_hosts]' > /workspace/inventory/hosts &&
@@ -152,7 +152,7 @@ jobs:
             bash -c "
               apt-get update &&
               apt-get install -y openssh-client sshpass git &&
-              pip install ansible &&
+              pip install "ansible-core==2.16.*" &&
 
               mkdir -p /workspace/inventory &&
               echo '[rhel8_hosts]' > /workspace/inventory/hosts &&
