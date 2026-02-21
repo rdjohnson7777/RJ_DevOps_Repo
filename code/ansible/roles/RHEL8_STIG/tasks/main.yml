@@ -45,7 +45,7 @@
     - name: Backup /etc/default/grub
       ansible.builtin.copy:
         src: /etc/default/grub
-        dest: "/etc/default/grub.bak.{{ ansible_date_time_iso.8601 }}"
+        dest: "/etc/default/grub.bak.{{ ansible_date_time.iso8601 }}"
         remote_src: yes
 
     - name: Check if init_on_free=1 is already set
@@ -70,9 +70,9 @@
       when: not init_on_free_check.rc == 0 and not init_enforce.changed
       notify: grub_regenerate
 
-#    - name: Regenerate GRUB configuration if changes were made to the file
-#      notify: grub_regenerate
-#      when: init_enforce.changed or init_append.changed
+    - name: Regenerate GRUB configuration if changes were made to the file
+      notify: grub_regenerate
+      when: init_enforce.changed or init_append.changed
   tags: init
 
 # R-251707 RHEL-08-010331
