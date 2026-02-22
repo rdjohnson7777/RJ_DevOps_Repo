@@ -130,7 +130,7 @@ jobs:
             "
 
   ansible_enforce:
-    needs: ansible_check
+    needs: [terraform_apply, ansible_check]
     runs-on: ubuntu-latest
     environment: production
 
