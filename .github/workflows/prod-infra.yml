@@ -20,15 +20,6 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
 
-      - name: Debug filesystem
-        run: |
-          pwd
-          ls -la
-          echo "----"
-          ls -la code || true
-          echo "----"
-          find . -maxdepth 4 -type d
-
       - name: Terraform Init
         working-directory: code/terraform
         run: terraform init
@@ -99,13 +90,6 @@ jobs:
           ssh -i ssh_key.pem -o StrictHostKeyChecking=no \
           ${{ needs.terraform_apply.outputs.ssh_user }}@${{ needs.terraform_apply.outputs.rhel_ip }} \
           "cloud-init status --wait"
-
-### TESTING SSH, DEBUG
-      - name: Test SSH connectivity
-        run: |
-          ssh -i ssh_key.pem -o StrictHostKeyChecking=no \
-          ${{ needs.terraform_apply.outputs.ssh_user }}@${{ needs.terraform_apply.outputs.rhel_ip }} \
-          "echo SSH SUCCESS" 
 
       - name: Run Ansible STIG hardening (check mode)
         run: |
