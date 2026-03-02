@@ -1,0 +1,6 @@
+---
+- name: Patch all systems
+  hosts: all
+  become: true
+  roles:
+    - patch

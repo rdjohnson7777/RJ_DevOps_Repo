@@ -1,0 +1,11 @@
+---
+- name: Gather facts
+  ansible.builtin.setup:
+
+- name: Run RHEL patching
+  ansible.builtin.include_tasks: rhel.yml
+  when: ansible_facts['os_family'] == "RedHat"
+
+- name: Run Ubuntu patching
+  ansible.builtin.include_tasks: ubuntu.yml
+  when: ansible_facts['os_family'] == "Debian"

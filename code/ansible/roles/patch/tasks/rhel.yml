@@ -1,0 +1,17 @@
+---
+- name: Patch RHEL OS packages
+  ansible.builtin.dnf:
+    name: '*'
+    state: present
+    update_cache: yes
+
+- name: Check if reboot is needed
+  ansible.builtin.command: needs-restarting -r
+  register: reboot_check
+  failed_when: false
+  changed_when: false
+
+- name: Reboot necessary systems but exclude those without ............................
+  ansible.builtin.reboot:
+    when:
+      - reboot_check.rc != 0
